@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         atcoder-refactor
 // @namespace    https://github.com/yoshrc/atcoder-refactor
-// @version      1.0
+// @version      1.1
 // @description  Rewrites variable names in AtCoder problem statements.
 // @author       yoshrc
 // @match        https://atcoder.jp/contests/*/tasks/*
@@ -21,7 +21,8 @@
     const storage = (() => {
         const STORAGE_KEY_PREFIX = 'atcoder-refactor-';
         const contest = location.href.match(/^https:\/\/atcoder\.jp\/contests\/([^/?]+)/)[1];
-        const key = STORAGE_KEY_PREFIX + contest;
+        const task = location.href.match(/^https:\/\/atcoder\.jp\/contests\/[^/?]+\/tasks\/([^/?]+)/)[1];
+        const key = STORAGE_KEY_PREFIX + contest + '-' + task;
 
         return {
             load: () => {
@@ -86,6 +87,7 @@
                 idToName[id] = id;
             });
             storage.save(idToName);
+            return idToName;
         };
 
         // Storage data gets inconsistent if the problem statement is updated
@@ -112,29 +114,17 @@
             }
         };
 
-        const rewriteVariables = idToName => {
-            forEachVariable(elem => {
-                const id = elem.textContent;
-                elem.textContent = idToName[id];
-            });
-        };
+        let idToName = storage.load();
+        if (!idToName) {
+            idToName = setupStorage();
+        } else if (fixInconsistentData(idToName)) {
+            storage.save(idToName);
+        }
 
         forEachVariable(elem => {
             const id = elem.textContent;
             elem.setAttribute(ID_ATTR, id);
-        });
-
-        const idToName = storage.load();
-        if (!idToName) {
-            setupStorage();
-        } else {
-            if (fixInconsistentData(idToName)) {
-                storage.save(idToName);
-            }
-            rewriteVariables(idToName);
-        }
-
-        forEachVariable(elem => {
+            elem.textContent = idToName[id];
             elem.onclick = () => handlers.onclick(elem);
         });
     });
