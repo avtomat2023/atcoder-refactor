@@ -10,33 +10,103 @@
 
 // TODO
 // - Inline edit like IDE's multiselection instead of popup
-// - Save variable name mapping in localStorage
+// - Use Roman font for multiple-character variable names
 
 (function() {
     'use strict';
 
     const ID_ATTR = 'data-atcoder-refactor-id';
 
-    const isAlpha = str => str.match(/^[A-Za-z]+$/);
+    const storage = (() => {
+        const STORAGE_KEY_PREFIX = 'atcoder-refactor-';
+        const contest = location.href.match(/^https:\/\/atcoder\.jp\/contests\/([^\/?]+)/)[1];
+        const key = STORAGE_KEY_PREFIX + contest;
 
-    const rewriteVariables = id => {
-        // TODO: Use current variable name instead of id
-        const newName = prompt('Variable Name', id);
-        document.querySelectorAll(`[${ID_ATTR}=${id}]`).forEach(varElem => {
-            varElem.textContent = newName;
-        })
-    }
+        // TODO: consider load failure in case that the problem statement is updated
+        return {
+            load: () => {
+                const idToNameStr = localStorage[key];
+                if (!idToNameStr) {
+                    return null;
+                } else {
+                    return JSON.parse(idToNameStr);
+                }
+            },
+
+            save: idToName => {
+                localStorage[key] = JSON.stringify(idToName);
+            }
+        };
+    })();
+
+    // When handlers called, the following setups must be completed:
+    // - for all varaible elements, ID_ATTR attribute must be set
+    // - id-name mapping should be set in the storage
+    const handlers = (() => {
+        const forEachVariable = (id, operationOnElement) => {
+            document.querySelectorAll(`[${ID_ATTR}=${id}]`).forEach(elem => {
+                operationOnElement(elem);
+            })
+        };
+
+        return {
+            onclick: varElem => {
+                const id = varElem.getAttribute(ID_ATTR);
+                // TODO: Use current variable name instead of id
+                // TODO: When an empty string is given, don't change the variable name
+                const newName = prompt('Variable Name', id);
+                forEachVariable(id, elem => {
+                    elem.textContent = newName;
+                });
+                const idToName = storage.load();
+                idToName[id] = newName;
+                storage.save(idToName);
+            }
+        }
+    })();
 
     // TODO: Use MathJax hook instead of wait 1000ms
     setTimeout(() => {
-        document.querySelectorAll('.mjx-char').forEach(varElem => {
-            const varId = varElem.textContent;
-            if (!isAlpha(varId)) {
-                return;
-            }
+        const isVariable = mathJaxCharElem => mathJaxCharElem.textContent.match(/^[A-Za-z]+$/);
+        const forEachVariable = operationOnElement => {
+            document.querySelectorAll('.mjx-char').forEach(elem => {
+                if (!isVariable(elem)) {
+                    return;
+                }
+                operationOnElement(elem);
+            })
+        }
 
-            varElem.setAttribute(ID_ATTR, varId);
-            varElem.onclick = () => rewriteVariables(varId);
+        const setupStorage = () => {
+            const idToName = {};
+            forEachVariable(elem => {
+                const id = elem.textContent;
+                idToName[id] = id;
+            });
+            storage.save(idToName);
+        };
+
+        const rewriteVariables = idToName => {
+            forEachVariable(elem => {
+                const id = elem.textContent;
+                elem.textContent = idToName[id];
+            });
+        };
+
+        forEachVariable(elem => {
+            const id = elem.textContent;
+            elem.setAttribute(ID_ATTR, id);
+        });
+
+        const idToName = storage.load();
+        if (!idToName) {
+            setupStorage();
+        } else {
+            rewriteVariables(idToName);
+        }
+
+        forEachVariable(elem => {
+            elem.onclick = () => handlers.onclick(elem);
         });
     }, 1000);
 })();
