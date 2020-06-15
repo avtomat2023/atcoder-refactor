@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         atcoder-refactor
-// @namespace    https://github.com/yoshrc
-// @version      0.1
+// @namespace    https://github.com/yoshrc/atcoder-refactor
+// @version      1.0
 // @description  Rewrites variable names in AtCoder problem statements.
 // @author       yoshrc
 // @match        https://atcoder.jp/contests/*/tasks/*
@@ -11,6 +11,7 @@
 // TODO
 // - Inline edit like IDE's multiselection instead of popup
 // - Use Roman font for multiple-character variable names
+// - Remove variable name setting ... realized by reset variable name when set empty
 
 (function() {
     'use strict';
