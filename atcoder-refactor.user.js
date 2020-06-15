@@ -22,7 +22,6 @@
         const contest = location.href.match(/^https:\/\/atcoder\.jp\/contests\/([^/?]+)/)[1];
         const key = STORAGE_KEY_PREFIX + contest;
 
-        // TODO: consider load failure in case that the problem statement is updated
         return {
             load: () => {
                 const idToNameStr = localStorage[key];
@@ -88,6 +87,30 @@
             storage.save(idToName);
         };
 
+        // Storage data gets inconsistent if the problem statement is updated
+        const fixInconsistentData = idToName => {
+            let hasMissingId = false;
+            const unnecessaryIds = new Set(Object.keys(idToName));
+            forEachVariable(elem => {
+                const id = elem.textContent;
+                if (idToName[id]) {
+                    unnecessaryIds.delete(id);
+                } else {
+                    idToName[id] = id;
+                    hasMissingId = true;
+                }
+            });
+
+            if (unnecessaryIds.size !== 0) {
+                for (let id of unnecessaryIds) {
+                    delete idToName[id];
+                }
+                return true;
+            } else {
+                return hasMissingId;
+            }
+        };
+
         const rewriteVariables = idToName => {
             forEachVariable(elem => {
                 const id = elem.textContent;
@@ -104,6 +127,9 @@
         if (!idToName) {
             setupStorage();
         } else {
+            if (fixInconsistentData(idToName)) {
+                storage.save(idToName);
+            }
             rewriteVariables(idToName);
         }
 
