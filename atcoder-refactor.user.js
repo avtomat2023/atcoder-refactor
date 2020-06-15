@@ -51,14 +51,17 @@
 
         return {
             onclick: varElem => {
+                const idToName = storage.load();
                 const id = varElem.getAttribute(ID_ATTR);
-                // TODO: Use current variable name instead of id
-                // TODO: When an empty string is given, don't change the variable name
-                const newName = prompt('Variable Name', id);
+                const oldName = idToName[id];
+                const newName = prompt('Set variable name', oldName);
+                if (!newName || newName === '') {
+                    return;
+                }
+
                 forEachVariable(id, elem => {
                     elem.textContent = newName;
                 });
-                const idToName = storage.load();
                 idToName[id] = newName;
                 storage.save(idToName);
             }
