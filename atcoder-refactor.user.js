@@ -65,8 +65,7 @@
         }
     })();
 
-    // TODO: Use MathJax hook instead of wait 1000ms
-    setTimeout(() => {
+    MathJax.Hub.Register.StartupHook('End', () => {
         const isVariable = mathJaxCharElem => mathJaxCharElem.textContent.match(/^[A-Za-z]+$/);
         const forEachVariable = operationOnElement => {
             document.querySelectorAll('.mjx-char').forEach(elem => {
@@ -108,5 +107,5 @@
         forEachVariable(elem => {
             elem.onclick = () => handlers.onclick(elem);
         });
-    }, 1000);
+    });
 })();
